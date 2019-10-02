@@ -1,0 +1,22 @@
+version: 2.1
+orbs:
+  orb-tools: circleci/orb-tools@2.0.0
+  docker: circleci/docker@0.5.13
+
+workflows:
+  btd:
+    jobs:
+      - docker/publish:
+          context: dockerhub
+          deploy: true
+          lint-dockerfile: true
+          image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+          tag: latest
+      - orb-tools/publish:
+          context: circleci
+          requires:
+            - docker/publish
+          orb-path: orb.yml
+          orb-ref: squarebracket/generate-maven-settings@dev:${CIRCLE_BRANCH}
+          publish-token-variable: CIRCLECI_TOKEN
+          validate: true

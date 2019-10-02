@@ -1,0 +1,63 @@
+version: 2.1
+description: |
+  This orb is for generating a maven settings.xml file on-the-fly from a
+  project's repositories listed in its pom.xml. The username, password, and
+  the repositories for which the passed credentials should be applied are
+  configured via the orb's parameters.
+
+jobs:
+  go:
+    description: |
+      Generate a maven settings.xml file on-the-fly from a pom.xml and orb
+      parameters
+    executor: generate-settings
+    parameters:
+      username:
+        description: The username to inject into settings.xml
+        type: string
+      password:
+        description: The password to inject into settings.xml
+        type: string
+      url-filter:
+        description: |
+          The url filter (regex) for repositories for which the credentials
+          should be applied
+        type: string
+    steps:
+      - run:
+          command: nodejs index.js <<parameters.username>> <<parameters.password>> <<parameters.url-filter>>
+      - persist_to_workspace:
+          paths:
+            - settings.xml
+executors:
+  generate-settings:
+    docker:
+      - image: squarebracket/generate-maven-settings:latest
+examples:
+  with_no_filter:
+    description: Generating a settings.xml for all repositories in a pom.xml
+    usage:
+      version: 2.1
+      orbs:
+        gen-settings: squarebracket/generate-maven-settings@1.0.0
+      workflows:
+        build-jar:
+          jobs:
+            - gen-settings/go:
+                username: $SECRET_USERNAME
+                password: $SECRET_PASSWORD
+  with_filter:
+    description: |
+      Generating a settings.xml for only those repositories in a pom.xml that
+      match the given url filter regex
+    usage:
+      version: 2.1
+      orbs:
+        gen-settings: squarebracket/generate-maven-settings@1.0.0
+      workflows:
+        build-jar:
+          jobs:
+            - gen-settings/go:
+                username: $SECRET_USERNAME
+                password: $SECRET_PASSWORD
+                url-filter: my.repo.com
